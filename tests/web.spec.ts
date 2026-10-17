@@ -1,5 +1,27 @@
 import { test, expect, type Page } from '@playwright/test';
 
+test('published CSS keeps Safari 16.2 compatible media queries and mobile navigation on screen', async ({ page }) => {
+  await page.goto('/subwatch/');
+  const stylesheets = await page.locator('link[rel="stylesheet"]').evaluateAll(links => links.map(link => (link as HTMLLinkElement).href));
+  expect(stylesheets.length).toBeGreaterThan(0);
+  const css = (await Promise.all(stylesheets.map(async url => (await page.request.get(url)).text()))).join('\n');
+  const media = [...css.matchAll(/@media\s*([^\{]+)/g)].map(match => match[1]);
+  expect(media.some(query => /max-width\s*:\s*760px/.test(query))).toBe(true);
+  expect(media.filter(query => /[<>]/.test(query))).toEqual([]);
+  for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 640 }, { width: 390, height: 700 }, { width: 667, height: 375 }]) {
+    await page.setViewportSize(viewport);
+    await expect(page.locator('.web-masthead')).toBeHidden();
+    await expect(page.locator('.web-mobile-brand')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '整体额度', exact: true })).toBeInViewport();
+    const nav = page.getByRole('navigation', { name: '主导航' });
+    await expect(nav.getByRole('button')).toHaveCount(3);
+    for (const button of await nav.getByRole('button').all()) await expect(button).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const bounds = await nav.boundingBox();
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
+  }
+});
+
 test('Web demo keeps quota, records, filters, detail and only three navigation tabs', async ({ page }) => {
   const failures: string[] = [];
   page.on('pageerror', e => failures.push(e.message));
