@@ -11,7 +11,7 @@ $env:JAVA_HOME=$jdk;$env:PATH=(Join-Path $jdk 'bin')+';'+$env:PATH
 function Checked([string]$Exe,[string[]]$Arguments){& $Exe @Arguments;if($LASTEXITCODE-ne 0){throw "$Exe failed"}}
 New-Item -ItemType Directory -Path $build,(Join-Path $build 'classes'),(Join-Path $build 'dex') -Force | Out-Null
 Checked (Join-Path $tools 'aapt2.exe') @('link','-o',(Join-Path $build 'unsigned.apk'),'--manifest',(Join-Path $PSScriptRoot 'AndroidManifest.xml'),'-I',$platform,(Join-Path $project 'android/build/resources.zip'))
-Checked (Join-Path $jdk 'bin/javac.exe') @('-encoding','UTF-8','-source','8','-target','8','-classpath',($platform+';'+(Join-Path $project 'android/build/classes.jar')),'-d',(Join-Path $build 'classes'),(Join-Path $PSScriptRoot 'WidgetRenderCheck.java'))
+Checked (Join-Path $jdk 'bin/javac.exe') @('-encoding','UTF-8','-source','8','-target','8','-classpath',($platform+';'+(Join-Path $project 'android/build/classes.jar')),'-d',(Join-Path $build 'classes'),(Join-Path $PSScriptRoot 'WidgetRenderCheck.java'),(Join-Path $PSScriptRoot 'WidgetThemeCheck.java'))
 Copy-Item -LiteralPath (Join-Path $project 'android/build/classes.jar') -Destination (Join-Path $build 'classes.jar') -Force
 Checked (Join-Path $jdk 'bin/jar.exe') @('--update','--file',(Join-Path $build 'classes.jar'),'-C',(Join-Path $build 'classes'),'.')
 Checked (Join-Path $tools 'd8.bat') @('--release','--min-api','26','--lib',$platform,'--output',(Join-Path $build 'dex'),(Join-Path $build 'classes.jar'))
@@ -27,4 +27,9 @@ Start-Sleep -Milliseconds 1500
 $result=& $adb -s $Serial logcat -d -s 'SubWatchWidgetQA:I' '*:S'
 $result | Select-Object -Last 20
 if (!($result -match ('PASS: '+$run))) { throw 'Native widget rendering check did not pass.' }
+Checked $adb @('-s',$Serial,'shell','am','start','-W','-n','cc.onemem.usage.qa/cc.onemem.usage.WidgetThemeCheck','--es','run',$run)
+Start-Sleep -Milliseconds 1000
+$themeResult=& $adb -s $Serial logcat -d -s 'SubWatchWidgetQA:I' '*:S'
+$themeResult | Select-Object -Last 10
+if (!($themeResult -match ('THEME PASS: '+$run))) { throw 'Native widget theme check did not pass.' }
 Checked $adb @('-s',$Serial,'pull','/sdcard/Android/data/cc.onemem.usage.qa/files', (Join-Path $project 'qa/widget-native'))

@@ -167,7 +167,7 @@
 .quota-app.dense-app .quota-card .quota-visual .metric-details .amount{font-size:10px;line-height:19px}
 .metric-details .amount b{font-weight:500}.metric-details .amount>span,.metric-details time{color:var(--muted)}
 .metric-details time{font-size:9px}
-.quota-app.dense-app .quota-card .quota-visual .account-metric .metric-top strong{font-size:11px}
+.quota-app.dense-app .quota-card .quota-visual .account-metric .metric-top strong{font-size:10px;font-weight:400;color:var(--muted)}
 .quota-app.dense-app .quota-card .quota-visual .overview-metric .metric-top{line-height:23px}
 .quota-app.dense-app .quota-card .quota-visual .metric-overflow{font-size:9px;line-height:15px;color:var(--muted)}
 .quota-app.dense-app .ring-center{gap:7px}
@@ -307,3 +307,43 @@
 .quota-app.dense-app .quota-card .quota-visual .overview-metric .percent{margin-left:auto}
 .quota-app.dense-app .quota-card .quota-visual .quota-metrics:has(.account-metric:nth-child(4)) .period-info{padding:2px 0}
 .widget-account-limit{margin:8px 0 0!important;text-align:right;font-size:10px;color:var(--muted)}
+.fast-indicator{display:inline-flex;align-items:center;vertical-align:-1px;margin-left:3px;color:#b77708;line-height:1}
+.fast-indicator svg{display:block;width:10px;height:10px}
+.request-badge[data-request-type]{display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;border-radius:4px;font-size:11px;font-weight:500;line-height:18px;padding:1px 6px}
+.row-model .request-badge[data-request-type]{font-size:9px;line-height:14px;padding:1px 4px}
+.call-heading>div{flex-wrap:wrap}.call-heading h2{min-width:0}
+.request-badge[data-request-type=stream]{background:#dbeafe;color:#1e40af}
+.request-badge[data-request-type=ws_v2]{background:#ede9fe;color:#5b21b6}
+.request-badge[data-request-type=sync]{background:#f3f4f6;color:#1f2937}
+.request-badge[data-request-type=unknown]{background:#fef3c7;color:#92400e}
+.request-badge[data-request-type=cyber]{background:#fee2e2;color:#991b1b}
+.request-badge[data-request-type=live]{background:#d1fae5;color:#065f46}
+[data-theme=dark] .request-badge[data-request-type=stream]{background:#1e3a8a;color:#bfdbfe}
+[data-theme=dark] .request-badge[data-request-type=ws_v2]{background:#4c1d95;color:#ddd6fe}
+[data-theme=dark] .request-badge[data-request-type=sync]{background:#374151;color:#e5e7eb}
+[data-theme=dark] .request-badge[data-request-type=unknown]{background:#78350f;color:#fde68a}
+[data-theme=dark] .request-badge[data-request-type=cyber]{background:#7f1d1d;color:#fecaca}
+[data-theme=dark] .request-badge[data-request-type=live]{background:#064e3b;color:#a7f3d0}
+.first-token-duration[data-severity=good]{color:#059669}
+.first-token-duration[data-severity=warn]{color:#d97706}
+.first-token-duration[data-severity=slow]{color:#ea580c}
+.first-token-duration[data-severity=critical]{color:#dc2626}
+[data-theme=dark] .first-token-duration[data-severity=good]{color:#34d399}
+[data-theme=dark] .first-token-duration[data-severity=warn]{color:#fbbf24}
+[data-theme=dark] .first-token-duration[data-severity=slow]{color:#fb923c}
+[data-theme=dark] .first-token-duration[data-severity=critical]{color:#f87171}
+[data-theme=dark] .fast-indicator{color:#efbe58}
+.request-feed{position:relative;overflow-anchor:none}
+.request-row-slot{position:relative}
+.app-header .live-refresh{color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.live-refresh-label{color:var(--accent);font-size:10px;white-space:nowrap}
+.live-refresh-error{margin:0;padding:0 20px 10px;color:var(--muted);font-size:11px}
+/* The footer must not become the browser's anchor when history is appended.
+   New head records are anchored explicitly by AnimatedRequestList. */
+.pull-refresh{position:relative;overflow-anchor:none}
+.pull-refresh-body{transition:transform 280ms cubic-bezier(.22,1,.36,1)}
+.pull-refresh-indicator{position:absolute;inset:0 0 auto;height:56px;display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:11px;pointer-events:none;transition:transform 280ms cubic-bezier(.22,1,.36,1),opacity 180ms ease-out}
+.pull-refresh-indicator svg{display:block;width:18px;height:18px;color:var(--accent)}
+.pull-refresh.dragging .pull-refresh-body,.pull-refresh.dragging .pull-refresh-indicator{transition:none}
+.pull-refresh.refreshing .pull-refresh-indicator svg{animation:spin .85s linear infinite}
+@media(prefers-reduced-motion:reduce){.app-header .live-refresh svg,.pull-refresh.refreshing .pull-refresh-indicator svg{animation:none}.pull-refresh-body,.pull-refresh-indicator{transition:none}}
