@@ -35,8 +35,9 @@ final class WidgetPin {
   }
   static RemoteViews preview(Context c,boolean wide)throws Exception {
     RemoteViews views=new RemoteViews(c.getPackageName(),R.layout.quota_widget);
-    views.setImageViewBitmap(R.id.body,QuotaWidget.draw(wide?296:216,wide?110:180,QuotaData.selected(new Store(c)),0));
-    views.setTextViewText(R.id.status,"SubWatch · 已用 / 估算总额");return views;
+    Store store=new Store(c);
+    WidgetTheme.apply(c,views,wide?296:216,wide?110:180,QuotaData.selected(store),0,store.config().optString("theme","light"));
+    views.setTextViewText(R.id.status,"");return views;
   }
   static JSONObject request(Activity activity,boolean wide)throws Exception {
     FutureTask<JSONObject> task=new FutureTask<>(()->{

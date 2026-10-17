@@ -201,3 +201,54 @@ test('failed validation keeps the connection editable without saving a secret', 
   await expect(form.getByRole('button', { name: '保存并连接' })).toBeEnabled();
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage }))).not.toContain('synthetic-test-credential');
 });
+
+test('merged request feed restores web credentials, shows metadata and refreshes without losing history', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.clock.install();
+  const row = (id: number) => ({ id, model: 'gpt-5', created_at: new Date(Date.now() + id * 1000).toISOString(), request_type: 'ws_v2', service_tier: 'priority', first_token_ms: 31000, duration_ms: 40000, input_tokens: 1000, output_tokens: 200, api_key: { name: '合并验证' } });
+  let rows = [row(2), row(1)], reads = 0;
+  await page.route('**/subwatch/api/bridge', async route => {
+    const { op, payload, connection } = route.request().postDataJSON();
+    expect(connection.key).toBe('synthetic-test-credential');
+    let data: unknown = true;
+    if (op === 'api') {
+      if (payload.path.startsWith('/admin/usage?')) { reads++; data = { items: rows, total: rows.length, pages: 1 }; }
+      else if (payload.path.includes('snapshot-v2')) data = { trend: [], models: [], groups: [] };
+      else if (payload.path.startsWith('/admin/groups')) data = [];
+      else data = { items: [], total: 0 };
+    }
+    await route.fulfill({ json: { data } });
+  });
+  const form = await addConnection(page);
+  await form.getByRole('button', { name: '保存并连接' }).click();
+  await expect(form).not.toBeVisible();
+  await page.getByRole('button', { name: '明细', exact: true }).click();
+  await page.getByRole('tab', { name: '明细', exact: true }).click();
+  await expect(page.locator('.usage-row')).toHaveCount(2);
+  await expect(page.locator('.request-badge').first()).toHaveText('WS');
+  await expect(page.locator('.first-token-duration').first()).toHaveAttribute('data-severity', 'slow');
+  await expect(page.locator('.fast-indicator').first()).toBeVisible();
+  await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now() + 100)));
+  await page.getByRole('button', { name: '开启自动刷新' }).click();
+  await expect.poll(() => reads).toBe(2);
+  rows = [row(3), ...rows];
+  await page.clock.runFor(10000);
+  await expect(page.locator('.usage-row')).toHaveCount(3);
+  await page.getByRole('button', { name: '停止自动刷新' }).click();
+  const stopped = reads;
+  await page.clock.runFor(20000);
+  expect(reads).toBe(stopped);
+  rows = [row(4), ...rows];
+  const box = (await page.locator('.native-scroll').boundingBox())!;
+  await page.mouse.move(box.x + 180, box.y + 80);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 180, box.y + 240, { steps: 8 });
+  await expect(page.locator('.pull-refresh-indicator')).toHaveText('释放刷新');
+  await page.mouse.up();
+  await expect(page.locator('.usage-row')).toHaveCount(4);
+  await expect(page.locator('.pull-refresh')).toHaveAttribute('data-pull-distance', '0');
+  await page.locator('.usage-row').first().click();
+  await expect(page.getByRole('heading', { name: '调用详情', exact: true })).toBeVisible();
+  await expect(page.locator('.call-heading .request-badge')).toHaveText('WS');
+  await expect(page.locator('.fast-indicator')).toBeVisible();
+});

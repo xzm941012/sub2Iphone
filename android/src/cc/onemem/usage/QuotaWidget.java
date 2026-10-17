@@ -30,18 +30,17 @@ public class QuotaWidget extends AppWidgetProvider {
     RemoteViews v=new RemoteViews(c.getPackageName(),R.layout.quota_widget);int[] tabs={R.id.tab0,R.id.tab1,R.id.tab2};
     Class<?> provider=Class.forName(info.provider.getClassName());
     for(int i=0;i<3;i++){
-      v.setInt(tabs[i],"setBackgroundResource",tab==i?R.drawable.tab_active:R.drawable.tab_idle);
-      v.setTextColor(tabs[i],tab==i?Color.WHITE:0xff333333);v.setOnClickPendingIntent(tabs[i],action(c,id,i,provider));
+      v.setOnClickPendingIntent(tabs[i],action(c,id,i,provider));
     }
     boolean busy=UpdateService.refreshing();refreshViews(v,busy);
     v.setOnClickPendingIntent(R.id.refresh,action(c,id,-1,provider));
     PendingIntent launch=PendingIntent.getActivity(c,id,new Intent(c,MainActivity.class),PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
     v.setOnClickPendingIntent(R.id.body,launch);JSONArray accounts=QuotaData.selected(store);
-    v.setImageViewBitmap(R.id.body,draw(width-24,height-66,accounts,tab));
+    WidgetTheme.apply(c,v,width-24,height-66,accounts,tab,store.config().optString("theme","light"));
     JSONObject cfg=store.config();Object cached=store.cache("quota:"+cfg.optString("selected")+":"+cfg.optString("groupId"));
     String status="打开 SubWatch 完成连接";
     if(cached instanceof JSONObject){
-      long stamp=((JSONObject)cached).optLong("updated");status=new java.text.SimpleDateFormat("HH:mm",Locale.CHINA).format(new Date(stamp))+" 更新 · 已用 / 估算总额";
+      long stamp=((JSONObject)cached).optLong("updated");status=new java.text.SimpleDateFormat("HH:mm",Locale.CHINA).format(new Date(stamp))+" 更新";
       Object err=store.cache("backgroundError");if(err!=JSONObject.NULL||((JSONObject)cached).optBoolean("partial"))status="刷新失败 · "+status;
     }
     if(busy)status="刷新中 · "+status;
@@ -49,6 +48,9 @@ public class QuotaWidget extends AppWidgetProvider {
     v.setTextViewText(R.id.status,status);manager.updateAppWidget(id,v);
   }catch(Exception ignored){/* Keep last usable RemoteViews during launcher races. */}}
   static Bitmap draw(int width,int height,JSONArray accounts,int tab)throws Exception{
+    return draw(width,height,accounts,tab,false);
+  }
+  static Bitmap draw(int width,int height,JSONArray accounts,int tab,boolean dark)throws Exception{
     width=Math.max(120,width);height=Math.max(24,height);
     Bitmap bitmap=Bitmap.createBitmap(width*2,height*2,Bitmap.Config.ARGB_8888);Canvas canvas=new Canvas(bitmap);canvas.scale(2,2);
     Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);float size=Math.min(height-8,width*.45f),cx=size/2,cy=height/2f;
@@ -58,7 +60,7 @@ public class QuotaWidget extends AppWidgetProvider {
     int count=periods.size();float gap=size*7/480,outer=size/2-3,stroke=Math.min(outer*.28f,(outer*.78f-gap*Math.max(0,count-1))/Math.max(1,count));
     for(int i=0;i<count;i++){
       float radius=outer-stroke/2-i*(stroke+gap);RectF oval=new RectF(cx-radius,cy-radius,cx+radius,cy+radius);
-      p.setStyle(Paint.Style.STROKE);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeWidth(stroke);p.setColor(0xffeeebe8);canvas.drawArc(oval,0,360,false,p);
+      p.setStyle(Paint.Style.STROKE);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeWidth(stroke);p.setColor(dark?0xff3d3f43:0xffeeebe8);canvas.drawArc(oval,0,360,false,p);
       double used=periods.get(i).optDouble("used",Double.NaN);
       if(Double.isFinite(used)&&used>0){p.setColor(quotaColor(used));canvas.drawArc(oval,-90,(float)(Math.max(0,Math.min(100,used))*3.6),false,p);if(used>=100)drawOverlap(canvas,p,cx,cy,radius,stroke,quotaColor(used));}
     }
@@ -68,21 +70,22 @@ public class QuotaWidget extends AppWidgetProvider {
       JSONObject period=periods.get(i);float top=i*row+Math.max(0,(row-font*2.7f)/2);String name=names.get(i);double used=period.optDouble("used",Double.NaN);
       p.setColor(quotaColor(used));canvas.drawCircle(left+2,top+font-2,Math.min(2,font*.18f),p);p.setTextSize(font);
       String percentage=Double.isFinite(used)?Math.round(Math.max(0,Math.min(100,used)))+"%":"—";
-      float nameRoom=right-left-p.measureText(percentage)-14;p.setColor(0xff555555);
+      float nameRoom=right-left-p.measureText(percentage)-14;
+      p.setTextSize(tab==0?font:Math.max(6,font*.88f));p.setColor(tab==0?(dark?0xffe6e6e8:0xff555555):(dark?0xffa2a3a8:0xff85878b));
       name=android.text.TextUtils.ellipsize(name,new android.text.TextPaint(p),Math.max(0,nameRoom),android.text.TextUtils.TruncateAt.END).toString();
       canvas.drawText(name,left+8,top+font,p);
       if(tab==0){
         float timeLeft=left+8+p.measureText(name)+6;p.setTextSize(font*.9f);String time=timer(period.optString("reset"));
-        fitText(p,time,right-p.measureText(percentage)-8-timeLeft);p.setColor(0xff85878b);canvas.drawText(time,timeLeft,top+font,p);
+        fitText(p,time,right-p.measureText(percentage)-8-timeLeft);p.setColor(dark?0xffa2a3a8:0xff85878b);canvas.drawText(time,timeLeft,top+font,p);
       }
       p.setTextSize(font);p.setTextAlign(Paint.Align.RIGHT);p.setColor(quotaColor(used));canvas.drawText(percentage,right,top+font,p);p.setTextAlign(Paint.Align.LEFT);
       float y=top+font*2.5f;String amount=dollars(period.optDouble("cost",Double.NaN))+" / "+dollars(period.optDouble("estimated",Double.NaN));
-      p.setTextSize(font*.82f);p.setColor(0xff555555);
+      p.setTextSize(font*.82f);p.setColor(dark?0xffe6e6e8:0xff555555);
       String trailing=tab==0?amount:timer(period.optString("reset"));String leading=tab==0?number(period.optDouble("tokens",Double.NaN))+" Token":amount;
       float room=right-left;fitText(p,trailing,room*(tab==0?.61f:.35f));float trailingWidth=p.measureText(trailing);
       p.setTextAlign(Paint.Align.RIGHT);canvas.drawText(trailing,right,y,p);p.setTextAlign(Paint.Align.LEFT);
       p.setTextSize(font*.85f);fitText(p,leading,room-trailingWidth-5);canvas.drawText(leading,left,y,p);
-      if(i+1<count){p.setColor(0xffe9ebef);p.setStrokeWidth(.5f);canvas.drawLine(left,(i+1)*row,right,(i+1)*row,p);}
+      if(i+1<count){p.setColor(dark?0xff36383e:0xffe9ebef);p.setStrokeWidth(.5f);canvas.drawLine(left,(i+1)*row,right,(i+1)*row,p);}
     }
     if(count==0){p.setTextSize(11);p.setColor(0xff888888);canvas.drawText("暂无额度数据",left,height/2f,p);}
     return bitmap;

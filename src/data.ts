@@ -22,6 +22,12 @@ export function compact(v: any, digits = 1): string { if (v == null || !Number.i
 export function money(v: any, digits = 2) { return v == null || !Number.isFinite(Number(v)) ? '—' : '$' + Number(v).toFixed(digits); }
 export function tokens(v: any) { return v == null || !Number.isFinite(Number(v)) ? '—' : Number(v).toLocaleString('en-US'); }
 export function seconds(v: any) { return v == null ? '—' : (Number(v) / 1000).toFixed(2) + 's'; }
+// Match Sub2API frontend/src/utils/latencyHealth.ts TTFT thresholds.
+export function firstTokenSeverity(ms: unknown) {
+  if (ms == null || ms === '' || !Number.isFinite(Number(ms))) return 'unknown';
+  const value = Number(ms);
+  return value >= 60000 ? 'critical' : value >= 30000 ? 'slow' : value >= 10000 ? 'warn' : 'good';
+}
 export function countdown(reset: any, now: number) { if(!reset)return '—'; const n = new Date(reset).getTime(); if (!Number.isFinite(n)) return '—'; const t = Math.max(0, Math.ceil((n - now) / 1000)); if (t >= 86400) return `${Math.floor(t / 86400)}天${Math.floor(t % 86400 / 3600)}时`; return `${Math.floor(t / 3600).toString().padStart(2, '0')}:${Math.floor(t % 3600 / 60).toString().padStart(2, '0')}:${(t % 60).toString().padStart(2, '0')}`; }
 export function countdownMinutes(reset: any, now: number) {
   if(!reset)return '—';const stamp=new Date(reset).getTime();if(!Number.isFinite(stamp))return '—';
@@ -60,5 +66,6 @@ export async function loadQuota(groupId: string): Promise<Account[]> {
   return result;
 }
 export function latencyTPS(r: RecordData) { const ms = Number(r.duration_ms); return ms > 0 && r.output_tokens != null ? (r.output_tokens / (ms / 1000)).toFixed(1) : '—'; }
+export function isFastRequest(r: RecordData) { const tier=typeof r.service_tier==='string'?r.service_tier.trim().toLowerCase():'';return tier==='priority'||tier==='fast'; }
 export function dateRange(days: number) { const end = new Date(); const start = new Date(end.getFullYear(), end.getMonth(), end.getDate() - days + 1); const local = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; return { start_date: local(start), end_date: local(end), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }; }
 export function safeFields(value: any): any { if (Array.isArray(value)) return value.map(safeFields); if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).filter(([k]) => !/^(key|admin_api_key|access_token|refresh_token|password|credentials|secret)$/i.test(k)).map(([k, v]) => [k, safeFields(v)])); return value; }
