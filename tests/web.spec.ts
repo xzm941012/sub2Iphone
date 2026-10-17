@@ -55,7 +55,7 @@ async function addConnection(page: Page) {
   await form.getByLabel('管理员 API 密钥', { exact: true }).fill('synthetic-test-credential');
   return form;
 }
-test('session connection uses cloud endpoint; secrets never enter storage and expire on reload', async ({ page }) => {
+async function mockConnection(page: Page) {
   const calls: string[] = [];
   await page.route('**/subwatch/api/bridge', async route => {
     const { op, payload, connection } = route.request().postDataJSON(); calls.push(op);
@@ -64,21 +64,110 @@ test('session connection uses cloud endpoint; secrets never enter storage and ex
     if (op === 'api') data = payload.path.startsWith('/admin/groups') ? [] : { items: [], total: 0 };
     await route.fulfill({ json: { data } });
   });
+  return calls;
+}
+
+test('remembered connection restores after reload and reopening without reentering its key', async ({ page, browser }) => {
+  const calls = await mockConnection(page);
   const form = await addConnection(page);
+  await expect(form.getByRole('checkbox', { name: '在此浏览器记住密钥' })).toBeChecked();
   await form.getByRole('button', { name: '保存并连接' }).click();
   await expect(form).not.toBeVisible();
   await expect(page.getByRole('heading', { name: '额度', exact: true })).toBeVisible();
   const stored = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
-  expect(stored).not.toContain('synthetic-test-credential');
+  expect(stored).toContain('synthetic-test-credential');
+  expect(await page.evaluate(() => localStorage.getItem('subwatch.web.v1'))).not.toContain('synthetic-test-credential');
+  expect(await page.evaluate(() => JSON.stringify({ ...sessionStorage }))).not.toContain('synthetic-test-credential');
   expect(stored).toContain('测试服务');
   expect(calls).toContain('testConfig');
   const count = calls.length;
   await page.reload();
-  await expect(page.getByRole('alert')).toContainText('会话密钥已清除');
-  expect(calls).toHaveLength(count);
+  await expect.poll(() => calls.length).toBeGreaterThan(count);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '额度', exact: true })).toBeVisible();
+  const context = await browser.newContext({ storageState: await page.context().storageState() });
+  const reopened = await context.newPage();
+  const reopenedCalls = await mockConnection(reopened);
+  await reopened.goto(new URL('/subwatch/', page.url()).href);
+  await expect.poll(() => reopenedCalls.length).toBeGreaterThan(0);
+  await expect(reopened.getByRole('alert')).toHaveCount(0);
+  await context.close();
   await page.getByRole('button', { name: '设置', exact: true }).click();
   await page.getByRole('button', { name: '编辑 测试服务', exact: true }).click();
   await expect(page.getByLabel('管理员 API 密钥', { exact: true })).toHaveValue('');
+});
+
+test('unchecking remember keeps a session connection and never persists its key', async ({ page }) => {
+  const calls = await mockConnection(page);
+  const form = await addConnection(page);
+  await form.getByRole('checkbox', { name: '在此浏览器记住密钥' }).uncheck();
+  await form.getByRole('button', { name: '保存并连接' }).click();
+  await expect(form).not.toBeVisible();
+  expect(await page.evaluate(() => JSON.stringify({ ...localStorage }))).not.toContain('synthetic-test-credential');
+  const count = calls.length;
+  await page.reload();
+  await expect(page.getByRole('alert')).toContainText('会话密钥已清除');
+  expect(calls).toHaveLength(count);
+});
+
+test('clear browser keys removes remembered and in-memory access but retains connection metadata', async ({ page }) => {
+  const calls = await mockConnection(page);
+  const form = await addConnection(page);
+  await form.getByRole('button', { name: '保存并连接' }).click();
+  await expect(form).not.toBeVisible();
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  const count = calls.length;
+  await page.getByRole('button', { name: '清除本浏览器的所有密钥' }).click();
+  await expect(page.getByRole('alert')).toContainText('会话密钥已清除');
+  expect(calls).toHaveLength(count);
+  const stored = await page.evaluate(() => JSON.stringify({ ...localStorage }));
+  expect(stored).not.toContain('synthetic-test-credential');
+  expect(stored).toContain('测试服务');
+});
+
+test('disabling remember deletes an existing saved key and keeps it only for the current page', async ({ page }) => {
+  const calls = await mockConnection(page);
+  const form = await addConnection(page);
+  await form.getByRole('button', { name: '保存并连接' }).click();
+  await expect(form).not.toBeVisible();
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: '编辑 测试服务' }).click();
+  await form.getByRole('checkbox', { name: '在此浏览器记住密钥' }).uncheck();
+  await form.getByRole('button', { name: '保存并连接' }).click();
+  await expect(form).not.toBeVisible();
+  expect(await page.evaluate(() => JSON.stringify({ ...localStorage }))).not.toContain('synthetic-test-credential');
+  const count = calls.length;
+  await page.reload();
+  await expect(page.getByRole('alert')).toContainText('会话密钥已清除');
+  expect(calls).toHaveLength(count);
+});
+
+test('removing a connection also removes its saved key', async ({ page }) => {
+  await mockConnection(page);
+  const form = await addConnection(page);
+  await form.getByRole('button', { name: '保存并连接' }).click();
+  await expect(form).not.toBeVisible();
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: '编辑 测试服务' }).click();
+  await form.getByRole('button', { name: '移除此连接' }).click();
+  await expect(form).not.toBeVisible();
+  const stored = await page.evaluate(() => JSON.stringify({ ...localStorage }));
+  expect(stored).not.toContain('synthetic-test-credential');
+  expect(stored).not.toContain('测试服务');
+});
+
+test('saved credentials are never reused for a changed service address', async ({ page }) => {
+  const calls = await mockConnection(page);
+  const form = await addConnection(page);
+  await form.getByRole('button', { name: '保存并连接' }).click();
+  await expect(form).not.toBeVisible();
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: '编辑 测试服务' }).click();
+  await form.getByLabel('服务地址', { exact: true }).fill('https://sub2apicn.onemem.cc');
+  const count = calls.length;
+  await form.getByRole('button', { name: '保存并连接' }).click();
+  await expect(form.getByRole('status')).toContainText('重新输入管理员密钥');
+  expect(calls).toHaveLength(count);
 });
 
 test('failed validation keeps the connection editable without saving a secret', async ({ page }) => {

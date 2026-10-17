@@ -1,5 +1,5 @@
 export type RecordData = Record<string, any>;
-export type Connection = { id: string; name: string; url: string; keySet?: boolean; key?: string };
+export type Connection = { id: string; name: string; url: string; keySet?: boolean; key?: string; rememberKey?: boolean };
 export type Config = { connections: Connection[]; selected: string; groupId: string; accounts: number[]; interval: number; refreshOnOpen: boolean; theme: string };
 export const defaults: Config = { connections: [], selected: '', groupId: '', accounts: [], interval: 15, refreshOnOpen: true, theme: 'light' };
 declare global { interface Window { Android?: { call(id: string, op: string, payload: string): void }; __nativeReply?: (id: string, result: any, error?: string) => void; __nativeBack?: () => void; } }
