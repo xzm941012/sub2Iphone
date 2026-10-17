@@ -5,7 +5,7 @@ import {CheckIcon,ChevronRightIcon,Cross2Icon,ReloadIcon} from '@radix-ui/react-
 import {api,bridge,resetCredits,type Account,type ResetCredits} from './data';
 import {consumeResetCredit} from './reset-flow';
 import {useScreenPortal} from './mobile';
-import {isNative} from './data';
+import {isStandalone as isNative} from './data';
 export default function ResetDialog(props:{account:Account|null;close:()=>void;updated:()=>void}){return isNative?<ResetContent {...props} container={document.body}/>:<PreviewReset {...props}/>;}
 function PreviewReset(props:any){const {screenRef}=useScreenPortal();return <ResetContent {...props} container={screenRef.current}/>;}
 function ResetContent({account,close,updated,container}:{account:Account|null;close:()=>void;updated:()=>void;container:HTMLElement|null}){

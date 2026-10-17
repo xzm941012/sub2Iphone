@@ -1,0 +1,30 @@
+[Unit]
+Description=SubWatch Web dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=subwatch
+Group=subwatch
+WorkingDirectory=/usr/local/app/subwatch/current
+ExecStart=/usr/bin/node server/index.mjs
+Environment=NODE_ENV=production
+Environment=SUBWATCH_PORT=4185
+Environment=SUBWATCH_PUBLIC_ORIGIN=https://sub2api-jp.onemem.cc
+Environment=SUBWATCH_ALLOWED_HOSTS=sub2api.onemem.cc,sub2apicn.onemem.cc,sub2api-jp.onemem.cc
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictSUIDSGID=true
+LockPersonality=true
+UMask=0077
+MemoryMax=256M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

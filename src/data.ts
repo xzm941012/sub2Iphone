@@ -6,7 +6,10 @@ declare global { interface Window { Android?: { call(id: string, op: string, pay
 const pending = new Map<string, { resolve: (v: any) => void; reject: (e: Error) => void; timer: number }>();
 window.__nativeReply = (id, result, error) => { const p = pending.get(id); if (!p) return; clearTimeout(p.timer); pending.delete(id); error ? p.reject(new Error(error)) : p.resolve(result); };
 export const isNative = !!window.Android;
+export const isWeb = !isNative && typeof document !== 'undefined' && document.documentElement.dataset.app === 'web';
+export const isStandalone = isNative || isWeb;
 export async function bridge<T = any>(op: string, payload: any = {}): Promise<T> {
+  if (isWeb) { const { webBridge } = await import('./web-bridge'); return webBridge<T>(op, payload); }
   if (!window.Android) { const r = await fetch('/__native', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ op, payload }) }); const j = await r.json(); if (!r.ok || j.error) throw new Error(j.error || '连接失败'); return j.data; }
   return new Promise((resolve, reject) => { const id = Date.now() + '-' + Math.random().toString(36).slice(2); const timer = window.setTimeout(() => { pending.delete(id); reject(new Error(op==='resetOpenAIQuota'?'等待重置结果超时，请先核实账户状态':'请求超时，请重试')); }, op==='resetOpenAIQuota'?105000:45000); pending.set(id, { resolve, reject, timer }); window.Android!.call(id, op, JSON.stringify(payload)); });
 }

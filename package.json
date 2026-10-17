@@ -11,7 +11,9 @@
     "predev": "npm run check:runtime",
     "dev": "vite",
     "prebuild": "npm run check:runtime",
-    "build": "tsc && vite build && node scripts/prepare-sites-build.mjs"
+    "build": "tsc && vite build --config web.vite.config.ts && node scripts/prepare-web-build.mjs",
+    "preview:web": "node dist/server/index.mjs",
+    "test:web": "playwright test --config playwright.web.config.ts"
   },
   "dependencies": {
     "@fontsource/roboto": "5.2.10",

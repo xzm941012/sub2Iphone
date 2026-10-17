@@ -9,6 +9,8 @@
 
 ## 看看 SubWatch
 
+`web` 分支现已提供独立的浏览器版本，导航为「额度 / 明细 / 设置」，默认使用演示数据。Oracle 部署、会话密钥规则和验证方法见 [Web 版说明](docs/WEB.md)。原 Android 版本继续保留。
+
 <table>
   <tr>
     <th width="50%">额度一眼掌握</th>

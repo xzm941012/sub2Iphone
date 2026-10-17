@@ -3,7 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import {ChevronDownIcon,CheckIcon} from '@radix-ui/react-icons';
 import {useScreenPortal} from './mobile';
 import {useKeyboard} from './mobile';
-import {isNative} from './data';
+import {isStandalone as isNative} from './data';
 
 type Props=SelectHTMLAttributes<HTMLSelectElement>;
 export default function Select(props:Props){return isNative?<Control {...props} container={document.body}/>:<Preview {...props}/>;}
