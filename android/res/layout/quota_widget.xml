@@ -1,0 +1,15 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@drawable/widget_bg">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:gravity="center_vertical">
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="36dp" android:padding="3dp" android:gravity="center_vertical" android:background="@drawable/tab_group">
+      <TextView android:id="@+id/tab0" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:gravity="center" android:text="总览" android:textSize="12sp" android:textColor="#FFFFFF" android:background="@drawable/tab_active"/>
+      <TextView android:id="@+id/tab1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:gravity="center" android:text="5h" android:textSize="12sp" android:textColor="#333333" android:background="@drawable/tab_idle"/>
+      <TextView android:id="@+id/tab2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:gravity="center" android:text="7d" android:textSize="12sp" android:textColor="#333333" android:background="@drawable/tab_idle"/>
+    </LinearLayout>
+    <FrameLayout android:layout_width="36dp" android:layout_height="36dp" android:layout_marginLeft="5dp">
+      <ImageButton android:id="@+id/refresh" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/ic_refresh" android:padding="7dp" android:background="@android:color/transparent" android:contentDescription="刷新"/>
+      <ProgressBar android:id="@+id/refresh_spinner" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="7dp" android:indeterminate="true" android:indeterminateDrawable="@drawable/widget_refresh_spin" android:visibility="gone" android:contentDescription="正在刷新"/>
+    </FrameLayout>
+  </LinearLayout>
+  <ImageView android:id="@+id/body" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:scaleType="fitCenter" android:src="@drawable/app_icon" android:contentDescription="额度与重置时间"/>
+  <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="end" android:text="打开 SubWatch 完成连接" android:textSize="9sp" android:textColor="#8B8B8B"/>
+</LinearLayout>

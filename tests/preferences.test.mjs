@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {preferenceWriter,preferencePatch} from '../src/preferences.ts';
+test('preferences save only local preference fields, without connection tests or API operations',async()=>{const calls=[];const write=preferenceWriter(async(op,payload)=>calls.push({op,payload}));await write({theme:'dark',interval:5,refreshOnOpen:false,connections:[{key:'must-not-send'}]});assert.deepEqual(calls,[{op:'savePreferences',payload:{preferences:{interval:5,refreshOnOpen:false,theme:'dark'}}}]);});
+test('rapid preferences are serialized; failure does not block later saves',async()=>{const saved=[];let active=0;const write=preferenceWriter(async(op,{preferences})=>{assert.equal(active++,0);await Promise.resolve();active--;if(preferences.theme==='dark')throw Error('disk full');saved.push(preferences);});const first=write({theme:'dark'});const second=write({theme:'light'});await assert.rejects(first);await second;assert.deepEqual(saved,[{theme:'light'}]);});
+test('invalid preferences never reach storage',()=>{assert.throws(()=>preferencePatch({interval:2}));assert.throws(()=>preferencePatch({theme:'unknown'}));assert.throws(()=>preferencePatch({refreshOnOpen:'yes'}));});

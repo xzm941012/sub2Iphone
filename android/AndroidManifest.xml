@@ -1,0 +1,22 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="cc.onemem.usage" android:versionCode="1" android:versionName="1.0.0">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36"/>
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+  <application android:label="SubWatch" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:icon="@drawable/app_icon" android:allowBackup="false" android:usesCleartextTraffic="false" android:supportsRtl="true">
+    <activity android:name=".MainActivity" android:exported="true" android:windowSoftInputMode="adjustResize" android:configChanges="uiMode">
+      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+    </activity>
+    <receiver android:name=".QuotaWidget" android:exported="true" android:label="SubWatch · 方形">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_compact"/>
+    </receiver>
+    <receiver android:name=".WideWidget" android:exported="true" android:label="SubWatch · 横向">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_wide"/>
+    </receiver>
+    <receiver android:name=".WidgetPinnedReceiver" android:exported="false"/>
+    <receiver android:name=".BootReceiver" android:exported="true"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/></intent-filter></receiver>
+    <service android:name=".UpdateService" android:permission="android.permission.BIND_JOB_SERVICE" android:exported="true"/>
+  </application>
+</manifest>

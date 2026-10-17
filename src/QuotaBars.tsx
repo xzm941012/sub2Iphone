@@ -1,0 +1,4 @@
+import { compact,money,countdownMinutes,quotaColor,type Period } from './data';
+export default function QuotaBars({five,seven,now,name='总览'}:{five:Period;seven:Period;now:number;name?:string}){
+ return <div className="quota-bars">{[five,seven].map((p,i)=><div className="quota-period" key={i}><div className="quota-period-head"><b>{i===0?'5h':'7d'}</b><strong style={{color:quotaColor(p.used)}}>{p.used==null?'—':Math.round(Math.max(0,Math.min(100,p.used)))+'%'}<small>已用</small></strong></div><progress aria-label={name+' '+(i===0?'5h':'7d')+'已用额度'} max={100} value={p.used==null?0:Math.max(0,Math.min(100,p.used))} style={{color:quotaColor(p.used),accentColor:quotaColor(p.used)}}/><div className="quota-period-meta"><div><small>重置</small><time>{countdownMinutes(p.reset,now)}</time></div><div><small>Token</small><span>{compact(p.tokens)}</span></div><div><small>已用 / 估算总额</small><span>{money(p.cost)} <em>/ {money(p.estimated)}</em></span></div></div></div>)}</div>;
+}
