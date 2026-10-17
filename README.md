@@ -1,10 +1,48 @@
-# SubWatch
+<p align="center">
+  <img src="public/branding/sub2api-logo.svg" width="72" alt="SubWatch 图标">
+</p>
 
-Sub2API 用量监控 Android 应用，包含 React / WebView 界面和 Android 原生桌面组件。本仓库为独立移动端源码，不包含 Windows Rust 项目。
+<h1 align="center">SubWatch</h1>
+
+<p align="center"><strong>额度还有多少，什么时候重置，拿起手机就知道。</strong></p>
+<p align="center">面向 Sub2API 的 Android 用量监控应用 · 多账户 · 原生桌面组件 · 浅色 / 深色</p>
+
+## 看看 SubWatch
+
+<table>
+  <tr>
+    <th width="50%">额度一眼掌握</th>
+    <th width="50%">用量有迹可循</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/quota.png" width="300" alt="额度页面：整体与账户进度、Token、费用及重置时间"></td>
+    <td align="center"><img src="docs/screenshots/usage-overview.png" width="300" alt="统计页面：请求数、费用、Token 趋势与模型分布"></td>
+  </tr>
+  <tr>
+    <td align="center">分清整体和单账户额度，随时查看 5h / 7d 已用比例。</td>
+    <td align="center">从今日概况到用量曲线，了解请求与费用的变化。</td>
+  </tr>
+  <tr>
+    <th>每次调用，都有明细</th>
+    <th>组件预览，深色也清晰</th>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/usage-records.png" width="300" alt="调用明细：模型、Token、缓存、首字延迟及输出速度"></td>
+    <td align="center"><img src="docs/screenshots/widgets.png" width="300" alt="应用内深色组件预览：额度圆环、倒计时及费用"></td>
+  </tr>
+  <tr>
+    <td align="center">查看模型、Token、缓存和响应速度，支持筛选及调用详情。</td>
+    <td align="center">按分组选择账户，在总览、5h 和 7d 之间切换。</td>
+  </tr>
+</table>
+
+截图来自实际运行的应用界面，使用虚构账户与演示用量，不含个人配置或密钥。右下图为应用内组件预览；Android 桌面组件由原生代码实现。
+
+## 你可以用它做什么
 
 ## 功能
 
-- 额度总览及账户 5h / 7d 已用比例、重置倒计时、Token 和已用 / 估算总额；整体进度条 16px，账户进度条 8px。
+- 查看整体与各账户的 5h / 7d 已用比例、重置倒计时、Token 和已用 / 估算总额。
 - 调度开关、账户设置、可用重置次数及明确确认后的重置操作。
 - 使用统计、趋势、分布、调用明细及筛选。
 - 多服务连接，浅色 / 深色 / 跟随系统，本地偏好静默保存。
@@ -12,6 +50,17 @@ Sub2API 用量监控 Android 应用，包含 React / WebView 界面和 Android �
 - AndroidKeyStore + AES-GCM 加密保存连接信息。源码不包含服务密钥或签名文件。
 
 从桌面长按空白处，在小组件列表中选择 SubWatch。部分 ColorOS 桌面的入口为“卡片 → 插件”。
+
+## 先用演示数据体验
+
+无需服务地址或 API 密钥，即可运行截图中的界面：
+
+```powershell
+npm ci
+npx vite --config docs/readme-demo.vite.config.ts
+```
+
+打开 `http://127.0.0.1:4182`。此预览只使用模拟数据，不读取本机配置，也不连接真实服务；不支持连接测试、账户修改或重置操作。
 
 ## 开发预览
 
@@ -58,6 +107,9 @@ Playwright 浏览器首次使用时可运行 `npx playwright install chromium`�
 - `android/res/`：Android 布局、图标和组件资源。
 - `scripts/`：本机开发代理及构建辅助脚本。
 - `tests/`：单元测试、浏览器测试及模拟器专用原生绘图检查。
+- `docs/`：README 截图与独立的模拟数据预览。
+
+应用使用 React / WebView 界面及 Java 原生能力。本仓库为独立移动端源码，不包含 Windows Rust 项目。
 
 后台更新受 Android 调度和设备省电策略影响，最短 15 分钟。估算总额为总已用费用 / 账户平均已用比例，缺失或零比例时显示未知。
 
