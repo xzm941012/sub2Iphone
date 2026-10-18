@@ -10,6 +10,7 @@ public final class Api {
   public Api(Store s,JSONObject connection){store=s;override=connection;}
   public Object get(String path) throws Exception {return request(path,"GET",null,false,true);}
   Object rawAccount(int id)throws Exception{return request("/admin/accounts/"+id,"GET",null,false,false);}
+  Object clearAccountError(int id)throws Exception{return request("/admin/accounts/"+id+"/clear-error","POST",new JSONObject(),false,true);}
   Object updateAccount(int id,JSONObject body)throws Exception{return request("/admin/accounts/"+id,"PUT",body,false,true);}
   Object scheduleAccount(int id,boolean value)throws Exception{return request("/admin/accounts/"+id+"/schedulable","POST",new JSONObject().put("schedulable",value),false,true);}
   public Object resetOpenAIQuota(int accountId,boolean confirmed)throws Exception {if(accountId<=0||!confirmed)throw new Exception("请先确认重置账户");return request("/admin/openai/accounts/"+accountId+"/reset-quota","POST",new JSONObject(),true,true);}

@@ -1,3 +1,4 @@
+import type { AccountState } from './account-status';
 export type RecordData = Record<string, any>;
 export type Connection = { id: string; name: string; url: string; keySet?: boolean; key?: string };
 export type Config = { connections: Connection[]; selected: string; groupId: string; accounts: number[]; interval: number; refreshOnOpen: boolean; theme: string };
@@ -34,7 +35,7 @@ export function countdownMinutes(reset: any, now: number) {
 }
 export const palette = ['#c86b48', '#e4a149', '#768c7a', '#7289ad', '#a68ab0', '#5e9eaa', '#ba8391'];
 export type Period = { used: number | null; reset: string | null; tokens: number | null; cost: number | null; estimated: number | null };
-export type Account = { id: number; name: string; five: Period; seven: Period; schedulable?:boolean; resetCredits?:ResetCredits|null; error?: string };
+export type Account = AccountState & { id: number; name: string; five: Period; seven: Period; resetCredits?:ResetCredits|null; error?: string };
 function finite(v: any): number | null { return v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v); }
 export function period(raw: any, extra: any, prefix: string): Period {
   const used = finite(raw?.utilization ?? raw?.used_percent ?? raw?.percentage ?? extra?.[prefix + '_used_percent']);
@@ -57,8 +58,10 @@ export async function loadQuota(groupId: string): Promise<Account[]> {
   const result: Account[] = [];
   // Limit concurrency to avoid flooding the admin API when many accounts exist.
   for (let i = 0; i < accounts.length; i += 4) result.push(...await Promise.all(accounts.slice(i, i + 4).map(async a => {
-    try { const u = await api(`/admin/accounts/${a.id}/usage`); return { id: a.id, name: a.name,schedulable:a.schedulable!==false, five: period(u.five_hour, a.extra, 'codex_5h'), seven: period(u.seven_day, a.extra, 'codex_7d'),resetCredits:resetCredits(a.extra?.codex_reset_credit_snapshot) }; }
-    catch (e) { return { id: a.id, name: a.name,schedulable:a.schedulable!==false, five: period(null, a.extra, 'codex_5h'), seven: period(null, a.extra, 'codex_7d'), error: String(e) }; }
+    const state: AccountState = Object.fromEntries(['status','error_message','rate_limit_reset_at','overload_until','temp_unschedulable_until','temp_unschedulable_reason','quota_used','quota_limit','quota_daily_used','quota_daily_limit','quota_weekly_used','quota_weekly_limit'].map(k=>[k,a[k]]));
+    const base = { ...state, id: a.id, name: a.name, schedulable:a.schedulable!==false, resetCredits:resetCredits(a.extra?.codex_reset_credit_snapshot) };
+    try { const u = await api(`/admin/accounts/${a.id}/usage`); return { ...base, five: period(u.five_hour, a.extra, 'codex_5h'), seven: period(u.seven_day, a.extra, 'codex_7d') }; }
+    catch (e) { return { ...base, five: period(null, a.extra, 'codex_5h'), seven: period(null, a.extra, 'codex_7d'), error: String(e) }; }
   })));
   return result;
 }
