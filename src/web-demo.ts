@@ -1,7 +1,7 @@
 // Synthetic, browser-local data. No personal configuration or upstream calls.
 const names = ['工作账户', '备用账户', '开发账户'];
 const groups = [{ id: 1, name: 'openai-plus' }, { id: 2, name: '开发环境' }];
-const states = names.map((name, i) => ({ id: i + 1, name, platform: 'openai', type: 'oauth', proxyId: 0, wsMode: 'ctx_pool', schedulable: true, credits: 3 }));
+const states = names.map((name, i) => ({ id: i + 1, name, platform: 'openai', type: 'oauth', status: 'active', proxyId: 0, wsMode: 'ctx_pool', schedulable: true, credits: 3 }));
 const started = Date.now();
 const period = (i: number, seven = false) => ({
   utilization: (seven ? [62, 87, 64] : [24, 50, 8])[i],
@@ -29,6 +29,11 @@ function filtered(q: URLSearchParams) {
 export async function demoRequest(op: string, p: any): Promise<any> {
   if (op === 'testConfig') return true;
   if (op === 'resetOpenAIQuota') throw Error('演示模式不消费重置机会，请连接真实服务后操作');
+  if (op === 'resetAccountStatus') {
+    if (p.confirmed !== true) throw Error('请先确认重置账号状态');
+    const a = states.find(a => a.id === p.accountId); if (!a) throw Error('账户不存在');
+    a.status = 'active'; return { id: a.id, name: a.name, status: a.status, schedulable: a.schedulable };
+  }
   if (op === 'accountProxies') return [];
   if (op === 'accountSettings' || op === 'saveAccountSettings') {
     const a = states.find(a => a.id === p.accountId); if (!a) throw Error('账户不存在');

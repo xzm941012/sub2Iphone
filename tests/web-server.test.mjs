@@ -39,3 +39,25 @@ test('reset requires explicit confirmation and uncertain writes are never retrie
 test('response scrubber retains only API key display metadata', () => {
   assert.deepEqual(scrub({ api_key: { id: 1, name: 'A', key: 'secret' }, api_key_id: 1, accessToken: 'secret', input_tokens: 42, nested: { password: 'secret' } }), { api_key: { id: 1, name: 'A' }, api_key_id: 1, input_tokens: 42, nested: {} });
 });
+
+test('account list exposes status metadata while retaining the account field allowlist', async () => {
+  const response = await handleBridge(request(body('api', { path: '/admin/accounts' })), async () => Response.json({ code: 0, data: { items: [{ id: 12, name: 'A', status: 'error', error_message: '授权已失效', temp_unschedulable_until: null, credentials: { access_token: 'private' }, extra: { unrelated: 'private', codex_5h_used_percent: 21 } }], total: 1 } }), allowed);
+  const value = await response.json();
+  assert.equal(value.data.items[0].status, 'error');
+  assert.equal(value.data.items[0].error_message, '授权已失效');
+  assert.equal(value.data.items[0].temp_unschedulable_until, null);
+  assert.ok(!JSON.stringify(value).includes('private'));
+});
+
+test('confirmed account-status reset is separate from quota reset and scrubs the result', async () => {
+  const calls = [];
+  const fetcher = async (url, options) => { calls.push([url, options.method]); return Response.json({ code: 0, data: { id: 12, name: 'A', platform: 'openai', type: 'oauth', status: 'active', schedulable: false, credentials: { access_token: 'private' } } }); };
+  await handleBridge(request(body('resetAccountStatus', { accountId: 12 })), fetcher, allowed);
+  assert.equal(calls.length, 0);
+  const response = await handleBridge(request(body('resetAccountStatus', { accountId: 12, confirmed: true })), fetcher, allowed);
+  const value = await response.json();
+  assert.equal(value.data.status, 'active'); assert.equal(value.data.schedulable, false);
+  assert.ok(calls[1][0].endsWith('/admin/accounts/12/clear-error'));
+  assert.equal(calls[1][1], 'POST'); assert.equal(calls.length, 2);
+  assert.ok(!JSON.stringify(value).includes('private'));
+});

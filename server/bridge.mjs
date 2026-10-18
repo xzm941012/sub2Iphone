@@ -1,4 +1,4 @@
-import { accountAdmin } from '../scripts/account-admin.mjs';
+import { accountAdmin, accountStatusFields } from '../scripts/account-admin.mjs';
 
 const readPaths = /^\/admin\/(?:groups\/all|accounts(?:\/\d+\/usage)?|usage(?:\/stats|\/search-users|\/search-api-keys)?|dashboard\/snapshot-v2|openai\/accounts\/\d+\/quota)$/;
 const sensitive = /(?:password|secret|credential|authorization|access[_-]?token|refresh[_-]?token|id[_-]?token|cookie|client[_-]?key)/i;
@@ -39,7 +39,7 @@ export async function handleBridge(request, fetcher = fetch, allowedHosts = []) 
   let op;
   try {
     const body = JSON.parse(await boundedText(request.body, 32768)); op = body.op;
-    if (!['api', 'testConfig', 'accountSettings', 'accountProxies', 'saveAccountSettings', 'resetOpenAIQuota'].includes(op)) throw Error('不支持的操作');
+    if (!['api', 'testConfig', 'accountSettings', 'accountProxies', 'saveAccountSettings', 'resetAccountStatus', 'resetOpenAIQuota'].includes(op)) throw Error('不支持的操作');
     const base = serviceUrl(body.connection?.url), key = body.connection?.key;
     if (!allowedHosts.includes(new URL(base).hostname)) throw Error('此服务域名未获本站管理员允许');
     if (typeof key !== 'string' || !key.trim() || key.length > 4096 || /[\r\n]/.test(key)) throw Error('请输入有效的管理员 API 密钥');
@@ -66,7 +66,7 @@ export async function handleBridge(request, fetcher = fetch, allowedHosts = []) 
       if (!readPaths.test(pathname)) throw Error('不允许的接口');
       const raw = await upstream('GET', p.path);
       if (pathname === '/admin/accounts') {
-        const view = a => ({ id: a.id, name: a.name, type: a.type, platform: a.platform, schedulable: a.schedulable, extra: Object.fromEntries(Object.entries(a.extra || {}).filter(([k]) => /^codex_(?:5h|7d)_(?:used_percent|reset_at)$/.test(k) || k === 'codex_reset_credit_snapshot')) });
+        const view = a => ({ id: a.id, name: a.name, type: a.type, platform: a.platform, schedulable: a.schedulable, ...accountStatusFields(a), extra: Object.fromEntries(Object.entries(a.extra || {}).filter(([k]) => /^codex_(?:5h|7d)_(?:used_percent|reset_at)$/.test(k) || k === 'codex_reset_credit_snapshot')) });
         data = Array.isArray(raw) ? raw.map(view) : { items: (raw.items || []).map(view), total: raw.total };
       } else data = raw;
     } else if (op === 'resetOpenAIQuota') {
